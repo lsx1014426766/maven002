@@ -1,0 +1,78 @@
+package zttc.itat.user.util;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+
+import junit.framework.Assert;
+
+import org.dbunit.DatabaseUnitException;
+import org.dbunit.database.DatabaseConnection;
+import org.dbunit.database.IDatabaseConnection;
+import org.dbunit.database.QueryDataSet;
+import org.dbunit.dataset.DataSetException;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSet;
+import org.dbunit.operation.DatabaseOperation;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+
+public class AbstractDbUnitTestCase {
+	public static IDatabaseConnection dbunitCon;
+	private File tempFile;
+	
+	@BeforeClass
+	public static void init() throws DatabaseUnitException, SQLException {
+		//把获取的连接connection再封装为dbunit提供的连接对象
+		dbunitCon = new DatabaseConnection(DbUtil.getConnection());
+	}
+	
+	//针对某一张表来创建一个数据集IDataSet
+	protected IDataSet createDateSet(String tname) throws DataSetException, IOException {
+		InputStream is = AbstractDbUnitTestCase
+					.class
+					.getClassLoader().getResourceAsStream(tname+".xml");
+		Assert.assertNotNull("dbunit的基本数据文件不存在",is);
+		return new FlatXmlDataSet(is);
+	}
+	
+	//不指定表明，则默认时是所有表都备份
+	protected void backupAllTable() throws SQLException, IOException, DataSetException {
+		IDataSet ds = dbunitCon.createDataSet();
+		writeBackupFile(ds);
+	}
+	
+	private void writeBackupFile(IDataSet ds) throws IOException, DataSetException {
+		tempFile = File.createTempFile("back","xml");
+		FlatXmlDataSet.write(ds, new FileWriter(tempFile));
+	}
+	//把需要备份的几个表，都写在指定的xml文件里
+	protected void backupCustomTable(String[] tname) throws DataSetException, IOException, SQLException {
+		QueryDataSet ds = new QueryDataSet(dbunitCon);
+		for(String str:tname) {
+			ds.addTable(str);
+		}
+		writeBackupFile(ds);
+	}
+	
+	protected void bakcupOneTable(String tname) throws DataSetException, IOException, SQLException {
+		backupCustomTable(new String[]{tname});
+	}
+	//测试完成后把中间出入的数据清理掉，回到最初的样子
+	protected void resumeTable() throws DatabaseUnitException, SQLException, IOException {
+		IDataSet ds = new FlatXmlDataSet(tempFile);
+		DatabaseOperation.CLEAN_INSERT.execute(dbunitCon, ds);
+	}
+	
+	
+	@AfterClass
+	public static void destory() {
+		try {
+			if(dbunitCon!=null) dbunitCon.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+}

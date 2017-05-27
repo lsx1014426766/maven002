@@ -1,0 +1,3 @@
+easymock的使用**********
+	它可以根据接口去模拟一个实现出来
+Failed to execute goal on project user-service: Could not resolve dependencies for project zttc.itat.user:user-service:jar:0.0.1-SNAPSHOT: The following artifacts could not be resolved: zttc.itat.user:user-core:jar:0.0.1-SNAPSHOT, zttc.itat.user:user-log:jar:0.0.1-SNAPSHOT: Failure to find zttc.itat.user:user-core:jar:0.0.1-SNAPSHOT in http://localhost:8081/nexus/content/groups/public/ was cached in the local repository, resolution will not be reattempted until the update interval of nexus has elapsed or updates are forced -> [Help 1]
